@@ -95,6 +95,7 @@ class Tapper:
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
                                 result = await self.verify_task(http_client, task['_id'])
                         if result is not None:
+                            await asyncio.sleep(delay=randint(5, 10))
                             is_claimed = await self.claim_task_reward(http_client, task['_id'])
                             if is_claimed:
                                 rewards = task['rewards'][0]
