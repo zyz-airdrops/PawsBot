@@ -90,7 +90,12 @@ class Tapper:
                                 logger.info(f"{self.session_name} | Performing TG subscription to <lc>{url}</lc>")
                                 await self.tg_session.join_tg_channel(url)
                                 result = await self.verify_task(http_client, task['_id'])
-
+                            elif task['code'] == 'invite':
+                                counter = task['counter']
+                                referrals = await self.get_referrals(http_client)
+                                if counter > len(referrals):
+                                    continue
+                                result = await self.verify_task(http_client, task['_id'])
                             elif task['code'] == 'twitter':
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
                                 result = await self.verify_task(http_client, task['_id'])
@@ -143,7 +148,20 @@ class Tapper:
             return status
 
         except Exception as e:
-            logger.error(f"{self.session_name} | Unknown error while claim reward for task <lc>{task_id}</lc> | Error: {e}")
+            logger.error(
+                f"{self.session_name} | Unknown error while claim reward for task <lc>{task_id}</lc> | Error: {e}")
+            await asyncio.sleep(delay=3)
+
+    async def get_referrals(self, http_client: aiohttp.ClientSession):
+        try:
+            response = await http_client.get(f'https://api.paws.community/v1/referral/my',
+                                             timeout=aiohttp.ClientTimeout(60))
+            response.raise_for_status()
+            response_json = await response.json()
+            return response_json.get('data', [])
+
+        except Exception as e:
+            logger.error(f"{self.session_name} | Unknown error while getting referrals | Error: {e}")
             await asyncio.sleep(delay=3)
 
     async def get_user_info(self, http_client: aiohttp.ClientSession, retry=0):
@@ -204,6 +222,7 @@ class Tapper:
                         if settings.AUTO_TASK:
                             await asyncio.sleep(delay=randint(5, 10))
                             await self.processing_tasks(http_client=http_client)
+                            logger.info(f"{self.session_name} | All available tasks completed")
 
                     logger.info(f"{self.session_name} | Sleep <y>{round(sleep_time / 60, 1)}</y> min")
                     await asyncio.sleep(delay=sleep_time)
