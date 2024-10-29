@@ -1,5 +1,6 @@
 [![Static Badge](https://img.shields.io/badge/Telegram-Bot%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/PAWSOG_bot/PAWS?startapp=idqtVYZG)
 
+# PAWS BOT
 ## Рекомендация перед использованием
 
 # 🔥🔥 Используйте PYTHON 3.10 🔥🔥
