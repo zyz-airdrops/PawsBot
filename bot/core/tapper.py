@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from time import time
 
 import aiohttp
@@ -14,6 +15,7 @@ from .headers import headers
 
 from random import randint
 
+from ..utils.api_checker import is_valid_endpoints
 from ..utils.tg_manager.TGSession import TGSession
 
 
@@ -204,6 +206,13 @@ class Tapper:
                         tg_web_data = await self.tg_session.get_tg_web_data()
                         if tg_web_data is None:
                             continue
+
+                        if not is_valid_endpoints():
+                            logger.warning("Detected api change! Stopped the bot for safety | "
+                                           "Contact me for update: <lc>https://t.me/DesQwertys</lc>")
+                            sys.exit()
+                        else:
+                            logger.info(f"{self.session_name} | Antidetect: endpoints successfully checked")
 
                         auth_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
                         if auth_token is None:
