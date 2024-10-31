@@ -98,7 +98,7 @@ class Tapper:
                                 if counter > len(referrals):
                                     continue
                                 result = await self.verify_task(http_client, task['_id'])
-                            elif task['code'] == 'twitter':
+                            elif task['code'] == 'twitter' or task['code'] == 'linked':
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
                                 result = await self.verify_task(http_client, task['_id'])
                         if result is not None:
