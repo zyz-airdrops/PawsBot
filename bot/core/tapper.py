@@ -17,14 +17,15 @@ from random import randint
 
 from ..utils.api_checker import is_valid_endpoints
 from ..utils.tg_manager.TGSession import TGSession
-
+from bot.core.WalletManager.WalletManager import get_valid_wallet, set_wallet
 
 class Tapper:
     def __init__(self, tg_session: TGSession):
         self.tg_session = tg_session
         self.session_name = tg_session.session_name
         self.start_param = ''
-        self.name = ''
+        self.name = '',
+        self.wallet = ''
 
     async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str, retry=0):
         try:
@@ -39,11 +40,11 @@ class Tapper:
             response_json = await response.json()
             auth_token = None
             if response_json.get('success', False):
-                auth_token = response_json.get('data', [])[0]
+                auth_token = response_json.get('data', None)
             return auth_token
 
         except Exception as error:
-            if retry < 5:
+            if retry < 3:
                 logger.warning(f"{self.session_name} | Can't logging | Retry attempt: {retry}")
                 await asyncio.sleep(delay=randint(5, 10))
                 return await self.login(http_client, tg_web_data=tg_web_data, retry=retry + 1)
@@ -101,6 +102,11 @@ class Tapper:
                             elif task['code'] == 'twitter' or task['code'] == 'linked':
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
                                 result = await self.verify_task(http_client, task['_id'])
+                            elif task['code'] == 'wallet':
+                                if self.wallet is not None and len(self.wallet) > 0:
+                                    logger.info(f"{self.session_name} | Performing wallet task: <lc>{task['title']}</lc>")
+                                    result = await self.verify_task(http_client, task['_id'])
+
                         if result is not None:
                             await asyncio.sleep(delay=randint(5, 10))
                             is_claimed = await self.claim_task_reward(http_client, task['_id'])
@@ -214,7 +220,8 @@ class Tapper:
                         else:
                             logger.info(f"{self.session_name} | Antidetect: endpoints successfully checked")
 
-                        auth_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
+                        auth_data = await self.login(http_client=http_client, tg_web_data=tg_web_data)
+                        auth_token = auth_data[0]
                         if auth_token is None:
                             token_live_time = 0
                             await asyncio.sleep(randint(100, 180))
@@ -224,9 +231,36 @@ class Tapper:
                         token_live_time = randint(3500, 3600)
 
                         http_client.headers['Authorization'] = f'Bearer {auth_token}'
-                        user_info = await self.get_user_info(http_client=http_client)
+                        user_info = auth_data[1]
                         balance = user_info['gameData']['balance']
-                        logger.info(f"{self.session_name} | Balance: <e>{balance}</e> PAWS")
+                        wallet = user_info['userData'].get('wallet', None)
+                        self.wallet = wallet
+                        is_wallet_connected = wallet is not None and len(wallet) > 0
+                        wallet_status = f"Wallet: <y>{wallet}</y>" if is_wallet_connected else 'Wallet not connected'
+                        logger.info(f"{self.session_name} | Balance: <e>{balance}</e> PAWS | {wallet_status}")
+
+                        if not is_wallet_connected and settings.CONNECT_TON_WALLET:
+                            await asyncio.sleep(randint(5, 10))
+                            valid_wallet = get_valid_wallet()
+                            if valid_wallet is not None:
+                                ton_wallet_address = valid_wallet['address']
+                                logger.info(f'{self.session_name} | Found valid wallet: <y>{ton_wallet_address}</y>')
+                                result = await set_wallet(self.session_name, http_client, ton_wallet_address)
+                                if result:
+                                    logger.success(f'{self.session_name} | '
+                                                   f'Wallet: <y>{ton_wallet_address}</y> successfully connected')
+                                    self.wallet = ton_wallet_address
+                            else:
+                                logger.warning(f'{self.session_name} | A valid wallet was not found. '
+                                            f'Try adding new wallets manually or generating them using command 3')
+
+                        elif is_wallet_connected and settings.DISCONNECT_TON_WALLET:
+                            await asyncio.sleep(randint(5, 10))
+                            result = await set_wallet(self.session_name, http_client, self.wallet, connect=False)
+                            if result:
+                                logger.success(f'{self.session_name} | '
+                                               f'Wallet: <y>{self.wallet}</y> successfully disconnected')
+                                self.wallet = None
 
                         if settings.AUTO_TASK:
                             await asyncio.sleep(delay=randint(5, 10))

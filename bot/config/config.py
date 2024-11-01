@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     AUTO_TASK: bool = True
     JOIN_TG_CHANNELS: bool = False
     REF_ID: str = 'idqtVYZG'
-    DISABLED_TASKS: list[str] = ['wallet']
+    DISABLED_TASKS: list[str] = []
+    CONNECT_TON_WALLET: bool = False
+    DISCONNECT_TON_WALLET: bool = False
 
 
 settings = Settings()

@@ -8,27 +8,32 @@
 > 🇷 🇺 README in russian available [here](README-RU.md)
 
 ## Features  
-| Feature                                            | Supported |
-|----------------------------------------------------|:---------:|
-| Multithreading                                     |     ✅     |
-| Proxy binding to session                           |     ✅     |
-| User-Agent binding to session                      |     ✅     |
-| Support for pyrogram .session / telethon .session  |     ✅     |
-| Registration in bot                                |     ✅     |
-| Auto-tasks                                         |     ✅     |
-| Daily rewards                                      |     ✅     |
+| Feature                                           | Supported |
+|---------------------------------------------------|:---------:|
+| Multithreading                                    |     ✅     |
+| Proxy binding to session                          |     ✅     |
+| User-Agent binding to session                     |     ✅     |
+| Support for pyrogram .session / telethon .session |     ✅     |
+| Registration in bot                               |     ✅     |
+| Ton wallets generation                            |     ✅     |
+| Wallets connection to PAWS                        |     ✅     |
+| Wallets disconnection from PAWS                   |     ✅     |
+| Full-tasks support                                |     ✅     |
+| Daily rewards                                     |     ✅     |
 
 
 
 ## [Settings](https://github.com/Desamod/PawsBot/blob/master/.env-example/)
-| Settings                |                                 Description                                 |
-|-------------------------|:---------------------------------------------------------------------------:|
-| **API_ID / API_HASH**   | Platform data from which to run the Telegram session (by default - android) |
-| **SLEEP_TIME**          |           Sleep time between cycles (by default - [7200, 10800])            |
-| **START_DELAY**         |           Delay between sessions at start (by default - [5, 25])            |
-| **AUTO_TASK**           |                         Auto tasks (default - True)                         |
-| **JOIN_CHANNELS**       |              Auto-join for tg channels tasks (default - False)              |
-| **REF_ID**              |                          Ref link for registration                          |
+| Settings                  |                                 Description                                 |
+|---------------------------|:---------------------------------------------------------------------------:|
+| **API_ID / API_HASH**     | Platform data from which to run the Telegram session (by default - android) |
+| **SLEEP_TIME**            |           Sleep time between cycles (by default - [7200, 10800])            |
+| **START_DELAY**           |           Delay between sessions at start (by default - [5, 25])            |
+| **AUTO_TASK**             |                         Auto tasks (default - True)                         |
+| **JOIN_CHANNELS**         |              Auto-join for tg channels tasks (default - False)              |
+| **REF_ID**                |                          Ref link for registration                          |
+| **CONNECT_TON_WALLET**    |     Connect Ton Wallet from wallets.json to PAWS bot (default - False)      |
+| **DISCONNECT_TON_WALLET** |              Disconnect Ton Wallet from PAWS (default - False)              |
 
 ## Quick Start 📚
 
@@ -80,6 +85,7 @@ You can also use arguments for quick start, for example:
 
 # 1 - Run clicker
 # 2 - Creates a session (pyrogram)
+# 3 - Generate TON wallets
 ```
 
 # Windows manual installation
@@ -100,6 +106,7 @@ You can also use arguments for quick start, for example:
 
 # 1 - Run clicker
 # 2 - Creates a session
+# 3 - Generate TON wallets
 ```
 
 ### Usages
