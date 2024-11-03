@@ -1,10 +1,10 @@
 import asyncio
-import json
 import sys
 from time import time
 
-import aiohttp
-import brotli
+
+import cloudscraper
+from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
 from better_proxy import Proxy
 from bot.config import settings
@@ -27,17 +27,17 @@ class Tapper:
         self.name = '',
         self.wallet = ''
 
-    async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str, retry=0):
+    async def login(self, http_client: cloudscraper.CloudScraper, tg_web_data: str, retry=0):
         try:
             payload = {'data': tg_web_data}
             if self.tg_session.start_param:
                 payload['referralCode'] = self.tg_session.start_param
 
-            response = await http_client.post("https://api.paws.community/v1/user/auth", json=payload,
-                                              timeout=aiohttp.ClientTimeout(60))
+            response = http_client.post("https://api.paws.community/v1/user/auth", json=payload,
+                                        timeout=60)
 
             response.raise_for_status()
-            response_json = await response.json()
+            response_json = response.json()
             auth_token = None
             if response_json.get('success', False):
                 auth_token = response_json.get('data', None)
@@ -52,22 +52,19 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error when logging: {error}")
             await asyncio.sleep(delay=randint(3, 7))
 
-    async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
+    async def check_proxy(self, http_client: cloudscraper.CloudScraper, proxy: str) -> None:
         try:
-            response = await http_client.get(url='https://ipinfo.io/ip', timeout=aiohttp.ClientTimeout(20))
-            ip = (await response.text())
+            response = http_client.get(url='https://ipinfo.io/ip', timeout=20)
+            ip = response.text
             logger.info(f"{self.session_name} | Proxy IP: {ip}")
         except Exception as error:
             logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {error}")
 
-    async def get_all_tasks(self, http_client: aiohttp.ClientSession, retry=0):
+    async def get_all_tasks(self, http_client: cloudscraper.CloudScraper, retry=0):
         try:
-            response = await http_client.get(f"https://api.paws.community/v1/quests/list")
+            response = http_client.get(f"https://api.paws.community/v1/quests/list")
             response.raise_for_status()
-            response_bytes = await response.read()
-            response_text = brotli.decompress(response_bytes)
-            response_json = json.loads(response_text.decode('utf-8'))
-            return response_json.get('data', [])
+            return response.json().get('data', [])
         except Exception as error:
             if retry < 3:
                 logger.warning(f"{self.session_name} | Can't getting tasks | Retry attempt: {retry}")
@@ -77,7 +74,7 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error when getting tasks: {error}")
             await asyncio.sleep(delay=3)
 
-    async def processing_tasks(self, http_client: aiohttp.ClientSession):
+    async def processing_tasks(self, http_client: cloudscraper.CloudScraper):
         try:
             tasks = await self.get_all_tasks(http_client)
             if tasks:
@@ -104,7 +101,8 @@ class Tapper:
                                 result = await self.verify_task(http_client, task['_id'])
                             elif task['code'] == 'wallet':
                                 if self.wallet is not None and len(self.wallet) > 0:
-                                    logger.info(f"{self.session_name} | Performing wallet task: <lc>{task['title']}</lc>")
+                                    logger.info(
+                                        f"{self.session_name} | Performing wallet task: <lc>{task['title']}</lc>")
                                     result = await self.verify_task(http_client, task['_id'])
 
                         if result is not None:
@@ -126,13 +124,13 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error when processing tasks: {error}")
             await asyncio.sleep(delay=3)
 
-    async def verify_task(self, http_client: aiohttp.ClientSession, task_id: str, retry=0):
+    async def verify_task(self, http_client: cloudscraper.CloudScraper, task_id: str, retry=0):
         try:
             payload = {'questId': task_id}
-            response = await http_client.post(f'https://api.paws.community/v1/quests/completed',
-                                              json=payload, timeout=aiohttp.ClientTimeout(60))
+            response = http_client.post(f'https://api.paws.community/v1/quests/completed',
+                                        json=payload, timeout=60)
             response.raise_for_status()
-            response_json = await response.json()
+            response_json = response.json()
             status = response_json.get('success', False) and response_json.get('data', False)
             return status
 
@@ -145,13 +143,13 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error while verifying task <lc>{task_id}</lc> | Error: {e}")
             await asyncio.sleep(delay=3)
 
-    async def claim_task_reward(self, http_client: aiohttp.ClientSession, task_id: str):
+    async def claim_task_reward(self, http_client: cloudscraper.CloudScraper, task_id: str):
         try:
             payload = {'questId': task_id}
-            response = await http_client.post(f'https://api.paws.community/v1/quests/claim',
-                                              json=payload, timeout=aiohttp.ClientTimeout(60))
+            response = http_client.post(f'https://api.paws.community/v1/quests/claim',
+                                        json=payload, timeout=60)
             response.raise_for_status()
-            response_json = await response.json()
+            response_json = response.json()
             status = response_json.get('success', False) or response_json.get('completed', False)
             return status
 
@@ -160,25 +158,23 @@ class Tapper:
                 f"{self.session_name} | Unknown error while claim reward for task <lc>{task_id}</lc> | Error: {e}")
             await asyncio.sleep(delay=3)
 
-    async def get_referrals(self, http_client: aiohttp.ClientSession):
+    async def get_referrals(self, http_client: cloudscraper.CloudScraper):
         try:
-            response = await http_client.get(f'https://api.paws.community/v1/referral/my',
-                                             timeout=aiohttp.ClientTimeout(60))
+            response = http_client.get(f'https://api.paws.community/v1/referral/my',
+                                       timeout=60)
             response.raise_for_status()
-            response_json = await response.json()
+            response_json = response.json()
             return response_json.get('data', [])
 
         except Exception as e:
             logger.error(f"{self.session_name} | Unknown error while getting referrals | Error: {e}")
             await asyncio.sleep(delay=3)
 
-    async def get_user_info(self, http_client: aiohttp.ClientSession, retry=0):
+    async def get_user_info(self, http_client: cloudscraper.CloudScraper, retry=0):
         try:
-            response = await http_client.get('https://api.paws.community/v1/user')
+            response = http_client.get('https://api.paws.community/v1/user')
             response.raise_for_status()
-            response_bytes = await response.read()
-            response_text = brotli.decompress(response_bytes)
-            response_json = json.loads(response_text.decode('utf-8'))
+            response_json = response.json()
             if response_json.get('success', False):
                 user_data = response_json.get('data')
                 return user_data
@@ -199,83 +195,99 @@ class Tapper:
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
         headers["User-Agent"] = user_agent
 
-        async with aiohttp.ClientSession(headers=headers, connector=proxy_conn, trust_env=True,
-                                         auto_decompress=False) as http_client:
-            if proxy:
-                await self.check_proxy(http_client=http_client, proxy=proxy)
+        http_client = CloudflareScraper(headers=headers, connector=proxy_conn, trust_env=True,
+                                        auto_decompress=False)
+        scraper = cloudscraper.create_scraper()
+        if proxy:
+            proxies = {
+                'http': proxy,
+                'https': proxy,
+                'socks5': proxy
+            }
+            scraper.proxies.update(proxies)
+            await self.check_proxy(http_client=scraper, proxy=proxy)
 
-            token_live_time = randint(3500, 3600)
-            while True:
-                try:
-                    sleep_time = randint(settings.SLEEP_TIME[0], settings.SLEEP_TIME[1])
-                    if time() - access_token_created_time >= token_live_time:
-                        tg_web_data = await self.tg_session.get_tg_web_data()
-                        if tg_web_data is None:
-                            continue
+        token_live_time = randint(3500, 3600)
+        scraper.headers = http_client.headers.copy()
+        while True:
+            try:
+                sleep_time = randint(settings.SLEEP_TIME[0], settings.SLEEP_TIME[1])
+                if time() - access_token_created_time >= token_live_time:
+                    tg_web_data = await self.tg_session.get_tg_web_data()
+                    if tg_web_data is None:
+                        continue
 
-                        if not is_valid_endpoints():
-                            logger.warning("Detected api change! Stopped the bot for safety | "
-                                           "Contact me for update: <lc>https://t.me/DesQwertys</lc>")
-                            sys.exit()
-                        else:
-                            logger.info(f"{self.session_name} | Antidetect: endpoints successfully checked")
+                    if not is_valid_endpoints():
+                        logger.warning("Detected api change! Stopped the bot for safety | "
+                                       "Contact me for update: <lc>https://t.me/DesQwertys</lc>")
+                        sys.exit()
+                    else:
+                        logger.info(f"{self.session_name} | Antidetect: endpoints successfully checked")
 
-                        auth_data = await self.login(http_client=http_client, tg_web_data=tg_web_data)
-                        auth_token = auth_data[0]
-                        if auth_token is None:
-                            token_live_time = 0
-                            await asyncio.sleep(randint(100, 180))
-                            continue
+                    auth_data = await self.login(http_client=scraper, tg_web_data=tg_web_data)
+                    auth_token = auth_data[0]
+                    if auth_token is None:
+                        token_live_time = 0
+                        await asyncio.sleep(randint(100, 180))
+                        continue
 
-                        access_token_created_time = time()
-                        token_live_time = randint(3500, 3600)
+                    access_token_created_time = time()
+                    token_live_time = randint(3500, 3600)
 
-                        http_client.headers['Authorization'] = f'Bearer {auth_token}'
-                        user_info = auth_data[1]
-                        balance = user_info['gameData']['balance']
-                        wallet = user_info['userData'].get('wallet', None)
-                        self.wallet = wallet
-                        is_wallet_connected = wallet is not None and len(wallet) > 0
-                        wallet_status = f"Wallet: <y>{wallet}</y>" if is_wallet_connected else 'Wallet not connected'
-                        logger.info(f"{self.session_name} | Balance: <e>{balance}</e> PAWS | {wallet_status}")
+                    http_client.headers['Authorization'] = f'Bearer {auth_token}'
+                    scraper.headers = http_client.headers.copy()
+                    user_info = auth_data[1]
+                    balance = user_info['gameData']['balance']
+                    wallet = user_info['userData'].get('wallet', None)
+                    self.wallet = wallet
+                    is_wallet_connected = wallet is not None and len(wallet) > 0
+                    wallet_status = f"Wallet: <y>{wallet}</y>" if is_wallet_connected else 'Wallet not connected'
+                    logger.info(f"{self.session_name} | Balance: <e>{balance}</e> PAWS | {wallet_status}")
 
-                        if not is_wallet_connected and settings.CONNECT_TON_WALLET:
-                            await asyncio.sleep(randint(5, 10))
-                            valid_wallet = get_valid_wallet()
-                            if valid_wallet is not None:
-                                ton_wallet_address = valid_wallet['address']
-                                logger.info(f'{self.session_name} | Found valid wallet: <y>{ton_wallet_address}</y>')
-                                result = await set_wallet(self.session_name, http_client, ton_wallet_address)
-                                if result:
-                                    logger.success(f'{self.session_name} | '
-                                                   f'Wallet: <y>{ton_wallet_address}</y> successfully connected')
-                                    self.wallet = ton_wallet_address
-                            else:
-                                logger.warning(f'{self.session_name} | A valid wallet was not found. '
-                                            f'Try adding new wallets manually or generating them using command 3')
-
-                        elif is_wallet_connected and settings.DISCONNECT_TON_WALLET:
-                            await asyncio.sleep(randint(5, 10))
-                            result = await set_wallet(self.session_name, http_client, self.wallet, connect=False)
+                    if not is_wallet_connected and settings.CONNECT_TON_WALLET:
+                        await asyncio.sleep(randint(5, 10))
+                        valid_wallet = get_valid_wallet()
+                        if valid_wallet is not None:
+                            ton_wallet_address = valid_wallet['address']
+                            logger.info(f'{self.session_name} | Found valid wallet: <y>{ton_wallet_address}</y>')
+                            result = await set_wallet(self.session_name, scraper, ton_wallet_address)
                             if result:
                                 logger.success(f'{self.session_name} | '
-                                               f'Wallet: <y>{self.wallet}</y> successfully disconnected')
-                                self.wallet = None
+                                               f'Wallet: <y>{ton_wallet_address}</y> successfully connected')
+                                self.wallet = ton_wallet_address
+                        else:
+                            logger.warning(f'{self.session_name} | A valid wallet was not found. '
+                                           f'Try adding new wallets manually or generating them using command 3')
 
-                        if settings.AUTO_TASK:
-                            await asyncio.sleep(delay=randint(5, 10))
-                            await self.processing_tasks(http_client=http_client)
-                            logger.info(f"{self.session_name} | All available tasks completed")
+                    elif is_wallet_connected and settings.DISCONNECT_TON_WALLET:
+                        await asyncio.sleep(randint(5, 10))
+                        result = await set_wallet(self.session_name, scraper, self.wallet, connect=False)
+                        if result:
+                            logger.success(f'{self.session_name} | '
+                                           f'Wallet: <y>{self.wallet}</y> successfully disconnected')
+                            self.wallet = None
 
-                    logger.info(f"{self.session_name} | Sleep <y>{round(sleep_time / 60, 1)}</y> min")
-                    await asyncio.sleep(delay=sleep_time)
+                    if settings.AUTO_TASK:
+                        await asyncio.sleep(delay=randint(5, 10))
+                        await self.processing_tasks(http_client=scraper)
+                        logger.info(f"{self.session_name} | All available tasks completed")
 
-                except InvalidSession as error:
-                    raise error
+                logger.info(f"{self.session_name} | Sleep <y>{round(sleep_time / 60, 1)}</y> min")
+                await asyncio.sleep(delay=sleep_time)
 
-                except Exception as error:
-                    logger.error(f"{self.session_name} | Unknown error: {error}")
-                    await asyncio.sleep(delay=randint(60, 120))
+            except InvalidSession as error:
+                raise error
+
+            except Exception as error:
+                logger.error(f"{self.session_name} | Unknown error: {error}")
+                await asyncio.sleep(delay=randint(60, 120))
+
+            except KeyboardInterrupt:
+                logger.warning("<r>Bot stopped by user...</r>")
+            finally:
+                if scraper is not None:
+                    await http_client.close()
+                    scraper.close()
 
 
 async def run_tapper(tg_session: TGSession, user_agent: str, proxy: str | None):
