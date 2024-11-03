@@ -83,6 +83,7 @@ class Tapper:
                     if not progress['claimed'] and task['code'] not in settings.DISABLED_TASKS:
                         result = True if progress['current'] == progress['total'] else None
                         if progress['current'] < progress['total']:
+                            is_partner = task.get('partner', False)
                             if task['code'] == 'telegram':
                                 if not settings.JOIN_TG_CHANNELS:
                                     continue
@@ -96,7 +97,7 @@ class Tapper:
                                 if counter > len(referrals):
                                     continue
                                 result = await self.verify_task(http_client, task['_id'])
-                            elif task['code'] == 'twitter' or task['code'] == 'linked':
+                            elif task['code'] == 'twitter' or task['code'] == 'linked' or is_partner:
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
                                 result = await self.verify_task(http_client, task['_id'])
                             elif task['code'] == 'wallet':
