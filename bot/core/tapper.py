@@ -90,21 +90,31 @@ class Tapper:
                                 url = task['data']
                                 logger.info(f"{self.session_name} | Performing TG subscription to <lc>{url}</lc>")
                                 await self.tg_session.join_tg_channel(url)
-                                result = await self.verify_task(http_client, task['_id'])
                             elif task['code'] == 'invite':
                                 counter = task['counter']
                                 referrals = await self.get_referrals(http_client)
                                 if counter > len(referrals):
                                     continue
-                                result = await self.verify_task(http_client, task['_id'])
                             elif task['code'] == 'twitter' or task['code'] == 'linked' or is_partner:
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
-                                result = await self.verify_task(http_client, task['_id'])
                             elif task['code'] == 'wallet':
                                 if self.wallet is not None and len(self.wallet) > 0:
                                     logger.info(
                                         f"{self.session_name} | Performing wallet task: <lc>{task['title']}</lc>")
-                                    result = await self.verify_task(http_client, task['_id'])
+                                else:
+                                    continue
+                            elif task['code'] == 'emojiName':
+                                logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
+                                if '🐾' not in self.tg_session.name:
+                                    nickname = f'{self.tg_session.name}🐾'
+                                    await self.tg_session.change_tg_nickname(name=nickname)
+                                    continue
+                            else:
+                                logger.info(
+                                    f"{self.session_name} | Unrecognized task: <lc>{task['title']}</lc>")
+                                continue
+
+                            result = await self.verify_task(http_client, task['_id'])
 
                         if result is not None:
                             await asyncio.sleep(delay=randint(5, 10))
