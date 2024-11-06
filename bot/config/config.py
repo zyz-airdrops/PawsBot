@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     JOIN_TG_CHANNELS: bool = False
     REF_ID: str = 'idqtVYZG'
     DISABLED_TASKS: list[str] = ['boost']
+    SIMPLE_TASKS: list[str] = ['twitter', 'linked', 'paragraph']
     CONNECT_TON_WALLET: bool = False
     DISCONNECT_TON_WALLET: bool = False
 

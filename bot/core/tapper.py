@@ -95,7 +95,7 @@ class Tapper:
                                 referrals = await self.get_referrals(http_client)
                                 if counter > len(referrals):
                                     continue
-                            elif task['code'] == 'twitter' or task['code'] == 'linked' or is_partner:
+                            elif task['code'] in settings.SIMPLE_TASKS or is_partner:
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
                             elif task['code'] == 'wallet':
                                 if self.wallet is not None and len(self.wallet) > 0:
