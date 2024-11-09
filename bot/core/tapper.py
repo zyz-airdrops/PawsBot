@@ -97,6 +97,12 @@ class Tapper:
                                     continue
                             elif task['code'] in settings.SIMPLE_TASKS or is_partner:
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
+                            elif task['code'] == 'daily' and not task['checkRequirements']:
+                                end_time = task.get('availableUntil', 0)
+                                curr_time = time() * 1000
+                                if end_time < curr_time:
+                                    continue
+                                logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
                             elif task['code'] == 'wallet':
                                 if self.wallet is not None and len(self.wallet) > 0:
                                     logger.info(
@@ -282,6 +288,11 @@ class Tapper:
                         await asyncio.sleep(delay=randint(5, 10))
                         await self.processing_tasks(http_client=scraper)
                         logger.info(f"{self.session_name} | All available tasks completed")
+
+                if settings.CLEAR_TG_NAME and '🐾' in self.tg_session.name:
+                    logger.info(f"{self.session_name} | Removing 🐾 from name..")
+                    nickname = self.tg_session.name.replace('🐾', '')
+                    await self.tg_session.change_tg_nickname(name=nickname)
 
                 logger.info(f"{self.session_name} | Sleep <y>{round(sleep_time / 60, 1)}</y> min")
                 await asyncio.sleep(delay=sleep_time)

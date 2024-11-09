@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     SIMPLE_TASKS: list[str] = ['twitter', 'linked', 'paragraph']
     CONNECT_TON_WALLET: bool = False
     DISCONNECT_TON_WALLET: bool = False
+    CLEAR_TG_NAME: bool = False
 
 
 settings = Settings()

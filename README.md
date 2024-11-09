@@ -38,6 +38,7 @@
 | **REF_ID**                |                          Ref link for registration                          |
 | **CONNECT_TON_WALLET**    |     Connect Ton Wallet from wallets.json to PAWS bot (default - False)      |
 | **DISCONNECT_TON_WALLET** |              Disconnect Ton Wallet from PAWS (default - False)              |
+| **CLEAR_TG_NAME**         |                Remove '🐾' from user name (default - False)                 |
 
 ## Quick Start 📚
 
