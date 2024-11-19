@@ -1,12 +1,7 @@
-[![Static Badge](https://img.shields.io/badge/Telegram-Bot%20Link-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/PAWSOG_bot/PAWS?startapp=idqtVYZG)
-
 # PAWS BOT
-## Recommendation before use
-
-# 🔥🔥 Use PYTHON 3.10 🔥🔥
 
 > 🇷 🇺 README in russian available [here](README-RU.md)
-
+> 
 ## Features  
 | Feature                                           | Supported |
 |---------------------------------------------------|:---------:|
@@ -52,7 +47,7 @@ Before you begin, make sure you have the following installed:
 ## Installation
 You can download the [**repository**](https://github.com/Desamod/PawsBot) by cloning it to your system and installing the necessary dependencies:
 ```shell
-git clone https://github.com/Desamod/PawsBot
+git clone https://github.com/zyz-airdrops/PawsBot.git
 cd PawsBot
 ```
 
@@ -125,12 +120,6 @@ Here is an example of what accounts.json should look like:
   }
 ]
 ```
-
-### Contacts
-
-For support or questions, you can contact me
-
-[![Static Badge](https://img.shields.io/badge/Telegram-Channel-Link?style=for-the-badge&logo=Telegram&logoColor=white&logoSize=auto&color=blue)](https://t.me/desforge_cryptwo)
 
 
 
