@@ -2,7 +2,6 @@ import asyncio
 import sys
 from time import time
 
-
 import cloudscraper
 from aiocfscrape import CloudflareScraper
 from aiohttp_proxy import ProxyConnector
@@ -11,6 +10,7 @@ from bot.config import settings
 
 from bot.utils import logger
 from bot.exceptions import InvalidSession
+from .agents import get_sec_ch_ua, is_latest_tg_version
 from .headers import headers
 
 from random import randint
@@ -18,6 +18,7 @@ from random import randint
 from ..utils.api_checker import is_valid_endpoints
 from ..utils.tg_manager.TGSession import TGSession
 from bot.core.WalletManager.WalletManager import get_valid_wallet, set_wallet
+
 
 class Tapper:
     def __init__(self, tg_session: TGSession):
@@ -97,7 +98,9 @@ class Tapper:
                                     continue
                             elif task['code'] in settings.SIMPLE_TASKS or is_partner:
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
-                            elif task['code'] == 'daily' or task['code'] == 'custom' and not task['checkRequirements']:
+                            elif (not task['checkRequirements'] and task['code'] == 'daily' or
+                                  (task['code'] == 'custom' and is_latest_tg_version(
+                                      http_client.headers['User-Agent']))):
                                 end_time = task.get('availableUntil', 0)
                                 curr_time = time() * 1000
                                 if end_time < curr_time:
@@ -211,6 +214,7 @@ class Tapper:
         access_token_created_time = 0
         proxy_conn = ProxyConnector().from_url(proxy) if proxy else None
         headers["User-Agent"] = user_agent
+        headers['Sec-Ch-Ua'] = get_sec_ch_ua(user_agent)
 
         http_client = CloudflareScraper(headers=headers, connector=proxy_conn, trust_env=True,
                                         auto_decompress=False)
