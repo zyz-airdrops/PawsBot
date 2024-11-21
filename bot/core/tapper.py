@@ -98,9 +98,9 @@ class Tapper:
                                     continue
                             elif task['code'] in settings.SIMPLE_TASKS or is_partner:
                                 logger.info(f"{self.session_name} | Performing <lc>{task['title']}</lc> task")
-                            elif not task['checkRequirements'] and (task['code'] == 'daily' or
-                                                                    (task['code'] == 'custom' and is_latest_tg_version(
-                                                                        http_client.headers['User-Agent']))):
+                            elif task['flag'] == 0 and (task['code'] == 'daily' or
+                                                        (task['code'] == 'custom' and is_latest_tg_version(
+                                                            http_client.headers['User-Agent']))):
                                 end_time = task.get('availableUntil', 0)
                                 curr_time = time() * 1000
                                 if end_time < curr_time:
