@@ -86,11 +86,15 @@ class Tapper:
                         if progress['current'] < progress['total']:
                             is_partner = task.get('partner', False)
                             if task['code'] == 'telegram':
-                                if not settings.JOIN_TG_CHANNELS:
-                                    continue
-                                url = task['data']
-                                logger.info(f"{self.session_name} | Performing TG subscription to <lc>{url}</lc>")
-                                await self.tg_session.join_tg_channel(url)
+                                if task['flag'] == 0:
+                                    logger.info(f"{self.session_name} | Performing TG task <lc>{task['title']}</lc>")
+                                else:
+                                    if not settings.JOIN_TG_CHANNELS:
+                                        continue
+
+                                    url = task['data']
+                                    logger.info(f"{self.session_name} | Performing TG subscription to <lc>{url}</lc>")
+                                    await self.tg_session.join_tg_channel(url)
                             elif task['code'] == 'invite':
                                 counter = task['counter']
                                 referrals = await self.get_referrals(http_client)
